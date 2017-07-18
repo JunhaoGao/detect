@@ -1,7 +1,7 @@
 import cv2
 import os
 
-videoPath = "D:\\FFOutput\\Thefirst" #input your video path
+videoPath = "D:\\detectProject\\data\\first" #input your video path
 for root, dirs, files in os.walk(videoPath):
     for file in files:
         videoCapture = cv2.VideoCapture(os.path.join(root, file))
@@ -15,6 +15,7 @@ for root, dirs, files in os.walk(videoPath):
         while success:
             if ( c % 5 == 0 ):
                 #frame = cv2.resize(frame, (480, 320)) #zip the frame
-                cv2.imwrite('D:/FFOutput/Thefirst/image/'+ str(file) + str(c) + '.jpg', frame)
+                cv2.imwrite('D:/detectProject/dataframe/' + 'image' + str(file).split('.MOV')[0] + str(c) + '.jpg',
+                            frame)
             success, frame = videoCapture.read()
             c = c + 1
