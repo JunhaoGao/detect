@@ -4,15 +4,14 @@ import os
 
 xmlFolderPath = "D:\\detectProject\\datamark\\xml"
 for root, dirs, files in os.walk(xmlFolderPath):
-    for xmlfile in files:
-        xmlPath = os.path.join(root, xmlfile)
+    for xmlFile in files:
+        xmlPath = os.path.join(root, xmlFile)
         dom = xdm.parse(xmlPath)
         rootXML = dom.documentElement
-        imagePath = rootXML.getElementsByTagName('path')[0].firstChild.data
-        imageName = imagePath.split('\\')[-1]
-        imageNameArray = str(imageName).split('.MOV')
+        imageName = str(xmlFile).split('MOV')
         allObject = rootXML.getElementsByTagName('object')
-        imgPath = "D:\\detectProject\\dataframe\\" + imageNameArray[0] + imageNameArray[1]
+        imageNameFinal = 'image' + imageName[0] + imageName[1].split('.xml')[0] + '.jpg'
+        imgPath = "D:\\detectProject\\dataframe\\" + imageNameFinal
         img = cv2.imread(imgPath, 3)
         i = 0
         for myObject in allObject:
@@ -43,6 +42,6 @@ for root, dirs, files in os.walk(xmlFolderPath):
                 x2 = int(xavg + 100)
                 size = 'L'
             img2 = img[y1:y2, x1:x2, :]
-            cv2.imwrite("D:\\detectProject\\traindata\\" + str(i) + 'of' + size + imageName, img2)
-            print 'success once'
+            cv2.imwrite("D:\\detectProject\\traindata\\" + str(i) + 'of' + size + imageNameFinal, img2)
+            print 'success once' + str(xmlFile)
 
