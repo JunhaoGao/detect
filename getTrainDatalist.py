@@ -10,14 +10,13 @@ small, middle, large = 0, 0, 0
 for root, dirs, files in os.walk(trainDataPath):
     for trainData in files:
         tdPath = str(trainData)
-        print str(trainData)[3]
-        if str(trainData)[3] == 'S':
+        if str(trainData)[0] == 'S':
             file_objectS.write(tdPath + '\n')
             small += 1
-        elif str(trainData)[3] == 'M':
+        elif str(trainData)[0] == 'M':
             file_objectM.write(tdPath + '\n')
             middle += 1
-        elif str(trainData)[3] == 'L':
+        elif str(trainData)[0] == 'L':
             file_objectL.write(tdPath + '\n')
             large += 1
 
