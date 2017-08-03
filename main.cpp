@@ -9,8 +9,8 @@
 using namespace std;
 using namespace cv;
 
-#define PosSamNO 750    //正样本个数  
-#define NegSamNO 12550    //负样本个数  
+#define PosSamNO 900    //正样本个数  
+#define NegSamNO 3500    //负样本个数  
 
 #define TRAIN true    //是否进行训练,true表示重新训练，false表示读取xml文件中的SVM模型  
 #define CENTRAL_CROP true   //true:训练时，对96*160的INRIA正样本图片剪裁出中间的64*128大小人体  
@@ -37,119 +37,52 @@ public:
 		return this->decision_func->rho;
 	}
 };
-
+void generateDescriptors(ifstream& imagePath, HOGDescriptor& hog, vector<float>& descriptors, int& descriptorDim, Mat& sampleFeatureMat, Mat& sampleLabelMat, int trainClass, string pathString);
 
 
 int main()
 {
 	//检测窗口(64,128),块尺寸(16,16),块步长(8,8),cell尺寸(8,8),直方图bin个数9  
-	HOGDescriptor hog(Size(64, 128), Size(16, 16), Size(8, 8), Size(8, 8), 9);//HOG检测器，用来计算HOG描述子的  
+	HOGDescriptor hog(Size(96, 200), Size(16, 16), Size(8, 8), Size(8, 8), 9);//HOG检测器，用来计算HOG描述子的  
 	int DescriptorDim;//HOG描述子的维数，由图片大小、检测窗口大小、块大小、细胞单元中直方图bin个数决定  
-	MySVM svm;//SVM分类器  
+	MySVM svm;//SVM分类器
+	vector<float> descriptors;//HOG描述子向量
 	//namedWindow("~.~");
 			  //若TRAIN为true，重新训练分类器  
 	if (TRAIN)
 	{
 		string ImgName;//图片名(绝对路径)  
-		//ifstream finPos("INRIAPerson96X160PosList.txt");//正样本图片的文件名列表  
-		ifstream finPos("D:\\detectProject\\MiddleTrainData.txt");
-														//ifstream finPos("PersonFromVOC2012List.txt");//正样本图片的文件名列表  
-		ifstream finNeg("D:\\detectProject\\NegativeData.txt");//负样本图片的文件名列表  
+		ifstream finPos("D:\\detectProject\\MiddleTrainData.txt");//正样本图片的文件名列表  
+		ifstream finNeg("D:\\detectProject\\NegativeData2.txt");//负样本图片的文件名列表  
+  
 
 		Mat sampleFeatureMat;//所有训练样本的特征向量组成的矩阵，行数等于所有样本的个数，列数等于HOG描述子维数      
 		Mat sampleLabelMat;//训练样本的类别向量，行数等于所有样本的个数，列数等于1；1表示有人，-1表示无人  
 
-		vector<float> descriptors;//HOG描述子向量  
-
+		string trainPath = "D:\\detectProject\\traindata\\";
+		string bgPath = "D:\\detectProject\\negativedata\\";
 		//依次读取正样本图片，生成HOG描述子  
-		for (int num = 0; num<PosSamNO && getline(finPos, ImgName); num++)
-		{
-			
-			//cout << "处理：" << ImgName << endl;
-			ImgName = "D:\\detectProject\\traindata\\" + ImgName;//加上正样本的路径名  
-			Mat src = imread(ImgName);//读取图片  
-			//imshow("....", src);
-			//waitKey(6000);
-			if (CENTRAL_CROP)
-				src = src(Rect(16, 16, 64, 128));//将96*160的INRIA正样本图片剪裁为64*128，即剪去上下左右各16个像素  
-												 //resize(src,src,Size(64,128));  
-
-
-			hog.compute(src, descriptors, Size(8, 8));//计算HOG描述子，检测窗口移动步长(8,8)  
-													  //处理第一个样本时初始化特征向量矩阵和类别矩阵，因为只有知道了特征向量的维数才能初始化特征向量矩阵  
-			if (0 == num)
-			{
-				DescriptorDim = descriptors.size();//HOG描述子的维数  
-												   //初始化所有训练样本的特征向量组成的矩阵，行数等于所有样本的个数，列数等于HOG描述子维数sampleFeatureMat  
-				sampleFeatureMat = Mat::zeros(PosSamNO + NegSamNO + HardExampleNO, DescriptorDim, CV_32FC1);
-				//初始化训练样本的类别向量，行数等于所有样本的个数，列数等于1；1表示有人，0表示无人  
-				sampleLabelMat = Mat::zeros(PosSamNO + NegSamNO + HardExampleNO, 1, CV_32FC1);
-			}
-
-			//将计算好的HOG描述子复制到样本特征矩阵sampleFeatureMat  
-			for (int i = 0; i < DescriptorDim; i++)
-				sampleFeatureMat.at<float>(num, i) = descriptors[i];//第num个样本的特征向量中的第i个元素  
-			sampleLabelMat.at<float>(num, 0) = 1;//正样本类别为1，有人
-			descriptors.clear();
-		}
-
+		generateDescriptors(finPos, hog, descriptors, DescriptorDim, sampleFeatureMat, sampleLabelMat, 0, trainPath);
 		//依次读取负样本图片，生成HOG描述子  
-		for (int num = 0; num<NegSamNO && getline(finNeg, ImgName); num++)
-		{
-			cout << "处理：" << ImgName << endl;
-			ImgName = "D:\\detectProject\\negativedata\\" + ImgName;//加上负样本的路径名  
-			Mat src = imread(ImgName);//读取图片  
-									  //resize(src,img,Size(64,128));  
-			//imshow("....", src);
-			//waitKey(6000);
-			if (CENTRAL_CROP)
-				src = src(Rect(16, 16, 64, 128));
-
-			hog.compute(src, descriptors, Size(8, 8));//计算HOG描述子，检测窗口移动步长(8,8)  
-													  //cout<<"描述子维数："<<descriptors.size()<<endl;  
-
-													  //将计算好的HOG描述子复制到样本特征矩阵sampleFeatureMat  
-			for (int i = 0; i < DescriptorDim; i++)
-			{
-				cout << descriptors[i] << endl;
-				sampleFeatureMat.at<float>(num + PosSamNO, i) = descriptors[i];//第PosSamNO+num个样本的特征向量中的第i个元素  
-			}
-			sampleLabelMat.at<float>(num + PosSamNO, 0) = -1;//负样本类别为-1，无人  
-			descriptors.clear();
-		}
-
+		generateDescriptors(finNeg, hog, descriptors, DescriptorDim, sampleFeatureMat, sampleLabelMat, 1, bgPath);
+		
 		//处理HardExample负样本  
 		if (HardExampleNO > 0)
 		{
-			ifstream finHardExample("HardExample_2400PosINRIA_12000NegList.txt");//HardExample负样本的文件名列表  
-																				 //依次读取HardExample负样本图片，生成HOG描述子  
-			for (int num = 0; num<HardExampleNO && getline(finHardExample, ImgName); num++)
-			{
-				cout << "处理：" << ImgName << endl;
-				ImgName = "D:\\DataSet\\HardExample_2400PosINRIA_12000Neg\\" + ImgName;//加上HardExample负样本的路径名  
-				Mat src = imread(ImgName);//读取图片  
-										  //resize(src,img,Size(64,128));  
- 
-				hog.compute(src, descriptors, Size(8, 8));//计算HOG描述子，检测窗口移动步长(8,8)  
-														  //cout<<"描述子维数："<<descriptors.size()<<endl;  
-
-														  //将计算好的HOG描述子复制到样本特征矩阵sampleFeatureMat  
-				for (int i = 0; i<DescriptorDim; i++)
-					sampleFeatureMat.at<float>(num + PosSamNO + NegSamNO, i) = descriptors[i];//第PosSamNO+num个样本的特征向量中的第i个元素  
-				sampleLabelMat.at<float>(num + PosSamNO + NegSamNO, 0) = -1;//负样本类别为-1，无人  
-				descriptors.clear();
-			}
+			ifstream finHardExample("HardExample_2400PosINRIA_12000NegList.txt");//HardExample负样本图片的文件名列表
+			string hardPath = "D:\\DataSet\\HardExample_2400PosINRIA_12000Neg\\";
+			generateDescriptors(finHardExample, hog, descriptors, DescriptorDim, sampleFeatureMat, sampleLabelMat, 2, hardPath);																	 //依次读取HardExample负样本图片，生成HOG描述子  
 		}
 
 		////输出样本的HOG特征向量矩阵到文件  
-		//ofstream fout("SampleFeatureMat.txt");  
-		//for(int i=0; i<PosSamNO+NegSamNO; i++)  
-		//{  
-		//  fout<<i<<endl;  
-		//  for(int j=0; j<DescriptorDim; j++)  
-		//      fout<<sampleFeatureMat.at<float>(i,j)<<"  ";  
-		//  fout<<endl;  
-		//}  
+		/*ofstream fout("D:\\detectProject\\SampleFeatureMat.txt");  
+		for(int i=0; i<PosSamNO+NegSamNO; i++)  
+		{  
+		  fout<<i<<endl;  
+		  for(int j=0; j<DescriptorDim; j++)  
+		      fout<<sampleFeatureMat.at<float>(i,j)<<"  ";  
+		  fout<<endl;  
+		} */ 
 
 		//训练SVM分类器  
 		//迭代终止条件，当迭代满1000次或误差小于FLT_EPSILON时停止迭代  
@@ -176,17 +109,17 @@ int main()
 	***************************************************************************************************/
 	DescriptorDim = svm.get_var_count();//特征向量的维数，即HOG描述子的维数  
 	int supportVectorNum = svm.get_support_vector_count();//支持向量的个数  
-	cout << "支持向量个数：" << supportVectorNum << endl;
+	//cout << "支持向量个数：" << supportVectorNum << endl;
 
 	Mat alphaMat = Mat::zeros(1, supportVectorNum, CV_32FC1);//alpha向量，长度等于支持向量个数  
 	Mat supportVectorMat = Mat::zeros(supportVectorNum, DescriptorDim, CV_32FC1);//支持向量矩阵  
 	Mat resultMat = Mat::zeros(1, DescriptorDim, CV_32FC1);//alpha向量乘以支持向量矩阵的结果  
 
 														   //将支持向量的数据复制到supportVectorMat矩阵中  
-	for (int i = 0; i<supportVectorNum; i++)
+	for (int i = 0; i < supportVectorNum; i++)
 	{
 		const float * pSVData = svm.get_support_vector(i);//返回第i个支持向量的数据指针  
-		for (int j = 0; j<DescriptorDim; j++)
+		for (int j = 0; j < DescriptorDim; j++)
 		{
 			//cout<<pData[j]<<" ";  
 			supportVectorMat.at<float>(i, j) = pSVData[j];
@@ -195,7 +128,7 @@ int main()
 
 	//将alpha向量的数据复制到alphaMat中  
 	double * pAlphaData = svm.get_alpha_vector();//返回SVM的决策函数中的alpha向量  
-	for (int i = 0; i<supportVectorNum; i++)
+	for (int i = 0; i < supportVectorNum; i++)
 	{
 		alphaMat.at<float>(0, i) = pAlphaData[i];
 	}
@@ -207,7 +140,7 @@ int main()
 	//得到最终的setSVMDetector(const vector<float>& detector)参数中可用的检测子  
 	vector<float> myDetector;
 	//将resultMat中的数据复制到数组myDetector中  
-	for (int i = 0; i<DescriptorDim; i++)
+	for (int i = 0; i < DescriptorDim; i++)
 	{
 		myDetector.push_back(resultMat.at<float>(0, i));
 	}
@@ -221,7 +154,7 @@ int main()
 
 	//保存检测子参数到文件  
 	ofstream fout("D:\\detectProject\\HOGDetectorForOpenCV.txt");
-	for (int i = 0; i<myDetector.size(); i++)
+	for (int i = 0; i < myDetector.size(); i++)
 	{
 		fout << myDetector[i] << endl;
 	}
@@ -233,7 +166,8 @@ int main()
 	Mat src = imread("D:\\detectProject\\test.jpg");
 	vector<Rect> found, found_filtered;//矩形框数组  
 	cout << "进行多尺度HOG人体检测" << endl;
-	myHOG.detectMultiScale(src, found, 0, Size(8, 8), Size(32, 32), 1.05, 2);//对图片进行多尺度行人检测  
+	myHOG.detectMultiScale(src(Range(300, 720), Range(0, 1280)), found, 0, Size(8, 8), Size(32, 32), 1.05, 2);//对图片进行多尺度行人检测  
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	cout << "找到的矩形框个数：" << found.size() << endl;
 
 	//找出所有没有嵌套的矩形框r,并放入found_filtered中,如果有嵌套的话,则取外面最大的那个矩形框放入found_filtered中  
@@ -249,17 +183,19 @@ int main()
 	}
 
 	//画矩形框，因为hog检测出的矩形框比实际人体框要稍微大些,所以这里需要做一些调整  
-	for (int i = 0; i<found_filtered.size(); i++)
+	for (int i = 0; i < found_filtered.size(); i++)
 	{
 		Rect r = found_filtered[i];
 		r.x += cvRound(r.width*0.1);
 		r.width = cvRound(r.width*0.8);
 		r.y += cvRound(r.height*0.07);
+		r.y += 300;
+		//!!!!!!!!!!!!!!!!!!
 		r.height = cvRound(r.height*0.8);
 		rectangle(src, r.tl(), r.br(), Scalar(0, 255, 0), 3);
 	}
 
-	imwrite("ImgProcessed.jpg", src);
+	imwrite("D:\\detectProject\\ImgProcessed.jpg", src);
 	namedWindow("src", 0);
 	imshow("src", src);
 	waitKey();//注意：imshow之后必须加waitKey，否则无法显示图像  
@@ -285,3 +221,126 @@ int main()
 	system("pause");
 }
 
+void generateDescriptors(ifstream& imagePath, HOGDescriptor& hog,vector<float>& descriptors, int& descriptorDim, Mat& sampleFeatureMat, Mat& sampleLabelMat, int trainClass, string pathString) {
+	string imgName;
+	int numLimit;
+	if (0 == trainClass)
+	{
+		numLimit = PosSamNO;
+	}
+	else if(1 == trainClass)
+	{
+		numLimit = NegSamNO;
+	}
+	else if(2 == trainClass)
+	{
+		numLimit = HardExampleNO;
+	}
+	for (int num = 0; num < numLimit && getline(imagePath, imgName); num++)
+	{
+		imgName = pathString + imgName;//加上正样本的路径名  
+		Mat src = imread(imgName);//读取图片  
+								  //imshow("....", src);
+								  //waitKey(6000);
+		if (CENTRAL_CROP && 0 == trainClass)
+			src = src(Rect(0, 0, 100, 200));//将96*160的INRIA正样本图片剪裁为64*128，即剪去上下左右各16个像素  
+											 //resize(src,src,Size(64,128));  
+		hog.compute(src, descriptors, Size(8, 8));//计算HOG描述子，检测窗口移动步长(8,8)  
+												  //处理第一个样本时初始化特征向量矩阵和类别矩阵，因为只有知道了特征向量的维数才能初始化特征向量矩阵  
+		//将计算好的HOG描述子复制到样本特征矩阵sampleFeatureMat  
+		if (0 == trainClass)
+		{
+			if(0 == num)
+			{
+				descriptorDim = descriptors.size();	//HOG描述子的维数 
+													//初始化所有训练样本的特征向量组成的矩阵，行数等于所有样本的个数，列数等于HOG描述子维数sampleFeatureMat  
+				sampleFeatureMat = Mat::zeros(PosSamNO + NegSamNO + HardExampleNO, descriptorDim, CV_32FC1);
+				//初始化训练样本的类别向量，行数等于所有样本的个数，列数等于1；1表示有人，0表示无人  
+				sampleLabelMat = Mat::zeros(PosSamNO + NegSamNO + HardExampleNO, 1, CV_32FC1);
+			}
+			for (int i = 0; i < descriptorDim; i++)
+				sampleFeatureMat.at<float>(num, i) = descriptors[i];//第num个样本的特征向量中的第i个元素  
+			sampleLabelMat.at<float>(num, 0) = 1;//正样本类别为1，有人
+		}
+		else if(1 == trainClass){
+			if(0 == num)
+				descriptorDim = sampleFeatureMat.cols;
+			for (int i = 0; i < descriptorDim; i++)
+				sampleFeatureMat.at<float>(num + PosSamNO, i) = descriptors[i];//第num个样本的特征向量中的第i个元素  
+			sampleLabelMat.at<float>(num + PosSamNO, 0) = -1;//正样本类别为1，有人
+		}
+		else if (2 == trainClass)
+		{
+			if (0 == num)
+				descriptorDim = sampleFeatureMat.cols;
+			for (int i = 0; i < descriptorDim; i++)
+				sampleFeatureMat.at<float>(num + PosSamNO + NegSamNO, i) = descriptors[i];//第num个样本的特征向量中的第i个元素  
+			sampleLabelMat.at<float>(num + PosSamNO + NegSamNO, 0) = -1;//正样本类别为1，有人
+		}
+
+	}
+	descriptors.clear();
+	return;
+}
+
+//依次读取正样本图片，生成HOG描述子  
+//for (int num = 0; num < PosSamNO && getline(finPos, ImgName); num++)
+//{
+//	//cout << "处理：" << ImgName << num << endl;
+//	ImgName = "D:\\detectProject\\traindata\\" + ImgName;//加上正样本的路径名  
+//	Mat src = imread(ImgName);//读取图片  
+//	//imshow("....", src);
+//	//waitKey(6000);
+//	if (CENTRAL_CROP)
+//		src = src(Rect(16, 16, 64, 128));//将96*160的INRIA正样本图片剪裁为64*128，即剪去上下左右各16个像素  
+//										 //resize(src,src,Size(64,128));  
+//	hog.compute(src, descriptors, Size(8, 8));//计算HOG描述子，检测窗口移动步长(8,8)  
+//											  //处理第一个样本时初始化特征向量矩阵和类别矩阵，因为只有知道了特征向量的维数才能初始化特征向量矩阵  
+//	cout << descriptors.size() << endl;
+//	if (0 == num)
+//	{
+//		DescriptorDim = descriptors.size();//HOG描述子的维数  
+//										   //初始化所有训练样本的特征向量组成的矩阵，行数等于所有样本的个数，列数等于HOG描述子维数sampleFeatureMat  
+//		sampleFeatureMat = Mat::zeros(PosSamNO + NegSamNO + HardExampleNO, DescriptorDim, CV_32FC1);
+//		//初始化训练样本的类别向量，行数等于所有样本的个数，列数等于1；1表示有人，0表示无人  
+//		sampleLabelMat = Mat::zeros(PosSamNO + NegSamNO + HardExampleNO, 1, CV_32FC1);
+//	}
+//	//将计算好的HOG描述子复制到样本特征矩阵sampleFeatureMat  
+//	for (int i = 0; i < DescriptorDim; i++)
+//		sampleFeatureMat.at<float>(num, i) = descriptors[i];//第num个样本的特征向量中的第i个元素  
+//	sampleLabelMat.at<float>(num, 0) = 1;//正样本类别为1，有人
+//	descriptors.clear();
+//}
+
+////依次读取负样本图片，生成HOG描述子  
+//for (int num = 0; num < NegSamNO && getline(finNeg, ImgName); num++)
+//{
+//	//cout << "处理：" << ImgName << num << endl;
+//	ImgName = "D:\\detectProject\\negativedata\\" + ImgName;//加上负样本的路径名  
+//	Mat src = imread(ImgName);//读取图片  
+//							  //resize(src,img,Size(64,128));  
+//	//imshow("....", src);
+//	//waitKey(6000);
+//	hog.compute(src, descriptors, Size(8, 8));//计算HOG描述子，检测窗口移动步长(8,8)  
+//											  //cout<<"描述子维数："<<descriptors.size()<<endl;  
+//											  //将计算好的HOG描述子复制到样本特征矩阵sampleFeatureMat  
+//	for (int i = 0; i < DescriptorDim; i++)
+//		sampleFeatureMat.at<float>(num + PosSamNO, i) = descriptors[i];//第PosSamNO+num个样本的特征向量中的第i个元素  
+//	sampleLabelMat.at<float>(num + PosSamNO, 0) = -1;//负样本类别为-1，无人  
+//	descriptors.clear();
+//}
+
+//for (int num = 0; num < HardExampleNO && getline(finHardExample, ImgName); num++)
+//{
+//	cout << "处理：" << ImgName << endl;
+//	ImgName = "D:\\DataSet\\HardExample_2400PosINRIA_12000Neg\\" + ImgName;//加上HardExample负样本的路径名  
+//	Mat src = imread(ImgName);//读取图片  
+//							  //resize(src,img,Size(64,128));  
+//	hog.compute(src, descriptors, Size(8, 8));//计算HOG描述子，检测窗口移动步长(8,8)  
+//											  //cout<<"描述子维数："<<descriptors.size()<<endl; 
+//											  //将计算好的HOG描述子复制到样本特征矩阵sampleFeatureMat  
+//	for (int i = 0; i < DescriptorDim; i++)
+//		sampleFeatureMat.at<float>(num + PosSamNO + NegSamNO, i) = descriptors[i];//第PosSamNO+num个样本的特征向量中的第i个元素  
+//	sampleLabelMat.at<float>(num + PosSamNO + NegSamNO, 0) = -1;//负样本类别为-1，无人  
+//	descriptors.clear();
+//}
