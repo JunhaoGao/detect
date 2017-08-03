@@ -13,7 +13,7 @@ for root, dirs, files in os.walk(videoPath):
         #frame = cv2.resize(frame, (480, 320)) #zip the frame
         c = 0
         while success:
-            if ( c % 5 == 0 ):
+            if c % 5 == 0:
                 #frame = cv2.resize(frame, (480, 320)) #zip the frame
                 cv2.imwrite('D:/detectProject/dataframe/third/' + 'image' + str(file).split('.MOV')[0] + str(c) + '.jpg',
                             frame)
