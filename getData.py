@@ -22,7 +22,7 @@ for root, dirs, files in os.walk(videoPath):
             c = c + 1
 
 
-xmlFolderPath = "D:\\detectProject\\datamark\\xml"
+xmlFolderPath = "D:\\detectProject\\datamark\\xml\\first"
 for root, dirs, files in os.walk(xmlFolderPath):
     for xmlFile in files:
         xmlPath = os.path.join(root, xmlFile)
@@ -32,7 +32,7 @@ for root, dirs, files in os.walk(xmlFolderPath):
         imageName = imagePath.split('\\')[-1]
         imageNameArray = str(imageName).split('.MOV')
         allObject = rootXML.getElementsByTagName('object')
-        imgPath = "D:\\detectProject\\dataframe\\" + imageNameArray[0] + imageNameArray[1]
+        imgPath = "D:\\detectProject\\dataframe\\first\\" + imageNameArray[0] + imageNameArray[1]
         img = cv2.imread(imgPath, 3)
         i = 0
         for myObject in allObject:
@@ -63,6 +63,6 @@ for root, dirs, files in os.walk(xmlFolderPath):
                 x2 = int(xavg + 100)
                 size = 'L'
             img2 = img[y1:y2, x1:x2, :]
-            cv2.imwrite("D:\\detectProject\\traindata\\" + str(i) + 'of' + size + imageName, img2)
+            cv2.imwrite("D:\\detectProject\\traindata\\first" + str(i) + 'of' + size + imageName, img2)
             print 'success once' + str(xmlFile)
 
