@@ -277,16 +277,23 @@ int main()
 	hog.setSVMDetector(myDetector);
 
 	/**************读入图片进行HOG行人检测******************/
-	Mat src = imread("D:\\detectProject\\test.jpg");
-	Mat trtd = src.clone();
-	vector<Rect> found, found_filtered;//矩形框数组 
-	DetectAndDraw(src, trtd, hog, found, found_filtered);
-
-	imwrite("D:\\detectProject\\processed\\ImgProcessed.jpg", trtd);
-
-	namedWindow("src", 0);
-	imshow("src", trtd);
-	waitKey();//注意：imshow之后必须加waitKey，否则无法显示图像  
+	vector<Rect> found, found_filtered;//矩形框数组
+	string detectDataPath = "D:\\detectProject\\";
+	ifstream finDetect(detectDataPath);
+	string detectData;
+	Mat src,trtd;
+	for(int num = 0;getline(finDetect, detectData);num++)
+	{
+		src = imread("D:\\detectProject\\test.jpg");
+		trtd = src.clone();
+		DetectAndDraw(src, trtd, hog, found, found_filtered);
+		found.clear();
+		found_filtered.clear();
+		imwrite("D:\\detectProject\\processed\\ImgProcessed.jpg", trtd);
+	}
+	//namedWindow("src", 0);
+	//imshow("src", trtd);
+	//waitKey();//注意：imshow之后必须加waitKey，否则无法显示图像  
 	system("pause");
 }
 
