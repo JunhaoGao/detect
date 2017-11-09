@@ -20,7 +20,7 @@ def Sharp(image, flag1=0, flag2=0):
                 iSharp[i, j] = x + y
     return iSharp
 
-image = cv.LoadImage('1494839078.jpg', 0)
+#image = cv.LoadImage('1494839078.jpg', 0)
 iMaxSharp = Sharp(image)
 iAddSharp = Sharp(image, 1)
 iRMaxSharp = Sharp(image, 0, 1)
