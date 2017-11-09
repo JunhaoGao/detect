@@ -21,6 +21,7 @@ for batch in batches:
             i = 0
             for myObject in allObject:
                 i = i + 1
+                type = myObject.getElementsByTagName('name')[0].firstChild.data
                 bndBox = myObject.getElementsByTagName('bndbox')[0]
                 xmin = int(bndBox.getElementsByTagName('xmin')[0].firstChild.data)
                 ymin = int(bndBox.getElementsByTagName('ymin')[0].firstChild.data)
@@ -49,7 +50,7 @@ for batch in batches:
 
                 if y1 > 0 and y2 < 720 and x1 > 0 and x2 <= 1280:
                     img2 = img[y1:y2, x1:x2, :]
-                    cv2.imwrite("D:\\detectProject\\traindata\\" + size + str(i) + batch + imgFinal, img2)
+                    cv2.imwrite("D:\\detectProject\\traindata\\" + type + "\\" + size + str(i) + batch + imgFinal, img2)
 
                 bgCount = 0
                 xc1 = x1
