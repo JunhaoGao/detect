@@ -431,7 +431,7 @@ void processedImgToVideo(string dirPath,char * videoPath,int tolFrame) {
 
 
 
-int main()
+int main2()
 {
 	string posPath1, negPath1, hardPath1, detectorPath1, modelPath1, trainType, detectDataPath;
 	string posPath2, negPath2, hardPath2, detectorPath2, modelPath2;
@@ -672,6 +672,7 @@ int main()
 //	imshow("src", trtd);
 //	waitKey();//注意：imshow之后必须加waitKey，否则无法显示图像  
 	system("pause");
+	return 0;
 }
 
 //依次读取正样本图片，生成HOG描述子  
