@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 def EM(pModel, width, height):
     sum = np.double(0.0)
     for i in range(0,height):
@@ -8,12 +9,14 @@ def EM(pModel, width, height):
             sum += pModel[i][j]
     return sum
 
+
 def EM2(pModel, width, height):
     sum = np.double(0.0)
     for i in range(0,height):
         for j in range(0,width):
             sum += pModel[i][j]*1.0*pModel[i][j]
     return sum
+
 
 def EI(pToSearch, l, h, u, v, pModel, width, height):
     sum = np.double(0.0)
@@ -23,6 +26,7 @@ def EI(pToSearch, l, h, u, v, pModel, width, height):
             sum += roi[i][j]
     return sum
 
+
 def EI2(pToSearch, l, h, u, v, pModel, width, height):
     sum = np.double(0.0)
     roi = pToSearch[v:v+height, u:u+width]
@@ -30,6 +34,7 @@ def EI2(pToSearch, l, h, u, v, pModel, width, height):
         for j in range(0,width):
             sum += roi[i][j]*1.0*roi[i][j]
     return sum
+
 
 def EIM(pToSearch, l, h, u, v, pModel, width, height):
     sum = np.double(0.0)
@@ -39,6 +44,7 @@ def EIM(pToSearch, l, h, u, v, pModel, width, height):
             sum += pModel[i][j]*1.0*roi[i][j]
     return sum
 
+
 def Match(pToSearch, l, h, pModel, width, height):
     uMax = l-width
     vMax = h-height
@@ -47,8 +53,8 @@ def Match(pToSearch, l, h, pModel, width, height):
     MatchRec = [0.0 for x in range(0, len)]
     k = 0
 
-    M = EM(pModel,width,height)
-    M2 = EM2(pModel,width,height)
+    M = EM(pModel, width, height)
+    M2 = EM2(pModel, width, height)
     for p in range(0, uMax+1):
         for q in range(0, vMax+1):
             I = EI(pToSearch,l,h,p,q,pModel,width,height)
@@ -73,11 +79,12 @@ def Match(pToSearch, l, h, pModel, width, height):
                 y = q
             k+=1
     print "val: %f"%val
-    return (x, y)
+    return x, y
 
-def main():
-    img = cv2.imread('niu.jpg', cv2.IMREAD_GRAYSCALE)
-    temp = cv2.imread('temp.png', cv2.IMREAD_GRAYSCALE)
+
+def main(path, temppath):
+    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    temp = cv2.imread(temppath, cv2.IMREAD_GRAYSCALE)
 
     print temp.shape
     imgHt, imgWd = img.shape
@@ -90,5 +97,7 @@ def main():
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
 if __name__ == '__main__':
-    main()
+    main(path='D:\\detectProject\\data\\sourceData\\VIDEO\\test.png',
+         temppath='D:\\detectProject\\data\\sourceData\\VIDEO\\chain.png')

@@ -431,7 +431,7 @@ void processedImgToVideo(string dirPath,char * videoPath,int tolFrame) {
 
 
 
-int main2()
+int main_1()
 {
 	string posPath1, negPath1, hardPath1, detectorPath1, modelPath1, trainType, detectDataPath;
 	string posPath2, negPath2, hardPath2, detectorPath2, modelPath2;
